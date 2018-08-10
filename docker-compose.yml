@@ -1,0 +1,78 @@
+version: '3'
+
+services:
+  proxy:
+    image: traefik:latest
+    command: --web --docker --docker.domain=site.gabrielsagnard.fr --logLevel=DEBUG
+    networks:
+      - traefik
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/traefik.toml:/traefik.toml
+      - /root/acme.json:/acme.json
+          
+  portainer:
+    image: portainer/portainer
+    restart: always
+    volumes:
+      - $PWD/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - 'traefik.frontend.rule=Host:monitor.gabrielsagnard.fr'
+    networks:
+      - traefik
+
+  db:
+     image: mysql:5.7
+     volumes:
+       - db_data:/var/lib/mysql
+     restart: always
+     labels:
+       - "traefik.enable=false"
+     networks:
+       - wp_back
+     environment:
+       MYSQL_ROOT_PASSWORD: wordpress
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: wordpress
+
+  wordpress:
+     depends_on:
+       - db
+     image: wordpress:latest
+     labels:
+      - "traefik.backend=wp"
+      - "traefik.frontend.rule=Host:blog.gabrielsagnard.fr"
+      - "traefik.docker.network=traefik"
+     restart: always
+     networks:
+      - traefik
+      - wp_back
+     environment:
+       WORDPRESS_DB_HOST: db:3306
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: wordpress
+     volumes:
+       - wp_data:/var/www/html
+
+  nginx:
+    image: nginx:latest
+    labels:
+      - "traefik.frontend.rule=Host:site.gabrielsagnard.fr"
+    networks:
+      - traefik
+
+networks:
+  wp_back:
+    driver: bridge
+  traefik:
+    external: true
+
+volumes:
+    db_data:
+    wp_data:
