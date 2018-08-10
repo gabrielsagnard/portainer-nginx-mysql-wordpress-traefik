@@ -3,7 +3,7 @@ version: '3'
 services:
   proxy:
     image: traefik:latest
-    command: --web --docker --docker.domain=site.gabrielsagnard.fr --logLevel=DEBUG
+    command: --web --docker --docker.domain=site.yourdomain --logLevel=DEBUG
     networks:
       - traefik
     ports:
@@ -22,7 +22,7 @@ services:
       - $PWD/data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
-      - 'traefik.frontend.rule=Host:monitor.gabrielsagnard.fr'
+      - 'traefik.frontend.rule=Host:monitor.yourdomain'
     networks:
       - traefik
 
@@ -47,7 +47,7 @@ services:
      image: wordpress:latest
      labels:
       - "traefik.backend=wp"
-      - "traefik.frontend.rule=Host:blog.gabrielsagnard.fr"
+      - "traefik.frontend.rule=Host:blog.yourdomain"
       - "traefik.docker.network=traefik"
      restart: always
      networks:
@@ -63,7 +63,7 @@ services:
   nginx:
     image: nginx:latest
     labels:
-      - "traefik.frontend.rule=Host:site.gabrielsagnard.fr"
+      - "traefik.frontend.rule=Host:site.yourdomain"
     networks:
       - traefik
 
